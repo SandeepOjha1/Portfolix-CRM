@@ -178,35 +178,83 @@ const Analytics = () => {
         </div>
 
         {/* Source Breakdown Pie */}
-        <div className="crm-card p-6">
-          <h2 className="text-base font-bold text-slate-900 mb-1">Acquisition by Channel</h2>
-          <p className="text-xs text-slate-500 mb-4">Volume breakdown by lead origin</p>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={sourceDistribution}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="count"
-                  label={({ name, percentage }) => `${name}: ${percentage}%`}
-                >
-                  {sourceDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+        <div className="crm-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Acquisition by Channel</h2>
+                <p className="text-xs text-slate-500">Volume breakdown by lead origin</p>
+              </div>
+            </div>
+
+            {sourceDistribution.length > 0 ? (
+              <>
+                <div className="h-48 relative my-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={sourceDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={3}
+                        dataKey="count"
+                      >
+                        {sourceDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(val, name, props) => [`${val} leads (${props.payload.percentage}%)`, name]}
+                        contentStyle={{
+                          backgroundColor: '#0F172A',
+                          borderRadius: '12px',
+                          color: '#fff',
+                          fontSize: '12px',
+                          border: 'none',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  {/* Centered Total Indicator */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-2xl font-black text-slate-900">{stats.totalLeads}</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Total Leads</span>
+                  </div>
+                </div>
+
+                {/* Clean Channel Legend */}
+                <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
+                  {sourceDistribution.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="font-semibold text-slate-800">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 text-[11px] font-mono">{item.count} lead{item.count !== 1 ? 's' : ''}</span>
+                        <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-[11px] font-mono">
+                          {item.percentage}%
+                        </span>
+                      </div>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0F172A',
-                    borderRadius: '12px',
-                    color: '#fff',
-                    fontSize: '12px',
-                    border: 'none',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                </div>
+              </>
+            ) : (
+              <div className="h-56 flex flex-col items-center justify-center text-center">
+                <div className="w-28 h-28 rounded-full border-4 border-dashed border-slate-200 flex flex-col items-center justify-center mb-2">
+                  <span className="text-xl font-black text-slate-900">0</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Leads</span>
+                </div>
+                <p className="text-xs text-slate-400">No channels recorded yet (0 leads)</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

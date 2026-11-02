@@ -14,7 +14,6 @@ import {
   Layers,
   ChevronRight,
   Loader2,
-  RotateCcw,
   Plus,
   Send,
   AlertCircle,
@@ -40,7 +39,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [resetting, setResetting] = useState(false);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
 
   const [data, setData] = useState({
@@ -78,31 +76,6 @@ const Dashboard = () => {
   useEffect(() => {
     fetchStats();
   }, []);
-
-  // Reset database to 0 leads
-  const handleResetToZero = async () => {
-    if (
-      !window.confirm(
-        'Are you sure you want to reset all leads and activity data to 0? This will wipe the database so you can start with a completely fresh slate.'
-      )
-    ) {
-      return;
-    }
-
-    setResetting(true);
-    try {
-      const res = await api.post('/dashboard/reset');
-      if (res.data.success) {
-        addToast('All leads and activity history reset to 0', 'info');
-        fetchStats();
-      }
-    } catch (err) {
-      console.error('Failed to reset data:', err);
-      addToast('Failed to reset database', 'error');
-    } finally {
-      setResetting(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -157,21 +130,6 @@ const Dashboard = () => {
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Reset to 0 Button */}
-          <button
-            onClick={handleResetToZero}
-            disabled={resetting}
-            title="Reset database to 0 leads and 0 activities"
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50"
-          >
-            {resetting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-            )}
-            <span>Reset Data to 0</span>
-          </button>
-
           {/* Test Public Form link */}
           <button
             onClick={() => window.open('/contact', '_blank')}
