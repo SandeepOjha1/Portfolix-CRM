@@ -33,11 +33,20 @@ const seedDatabase = async () => {
       console.log(`[Seed] Demo Admin already exists: admin@crm.com`);
     }
 
+    const shouldInsertSampleData = process.argv.includes('--sample') || process.argv.includes('--with-leads');
+
+    if (!shouldInsertSampleData) {
+      console.log('[Seed] Database initialized with 0 leads (clean slate mode).');
+      console.log('[Seed] To populate 12 sample leads for demonstration, run: npm run seed -- --sample');
+      await mongoose.connection.close();
+      process.exit(0);
+    }
+
     const now = new Date();
     const daysAgo = (days) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
     const daysAhead = (days) => new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
-    // 2. Realistic Leads dataset
+    // 2. Realistic Leads dataset (only inserted if --sample is explicitly passed)
     const sampleLeads = [
       {
         name: 'Jake Williams',
