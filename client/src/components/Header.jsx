@@ -188,3 +188,4 @@ const Header = ({ onOpenSidebar, onSearch, searchValue = '' }) => {
 };
 
 export default Header;
+

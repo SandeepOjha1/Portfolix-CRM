@@ -8,6 +8,70 @@ const generateToken = (id) => {
   });
 };
 
+// @desc    Register / Sign up new user
+// @route   POST /api/auth/register (or /api/auth/signup)
+// @access  Public
+exports.register = async (req, res, next) => {
+  try {
+    const { name, email, password, avatar } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your full name, email, and a password',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Check if user already exists
+    const existing = await Admin.findOne({ email: cleanEmail });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'An account with this email address already exists. Please log in instead.',
+      });
+    }
+
+    // Create user in database
+    const admin = await Admin.create({
+      name: name.trim(),
+      email: cleanEmail,
+      password,
+      role: 'admin',
+      avatar:
+        avatar ||
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name.trim())}`,
+      lastLogin: new Date(),
+    });
+
+    const token = generateToken(admin._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully! Welcome to Portfolix CRM.',
+      token,
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        avatar: admin.avatar,
+        lastLogin: admin.lastLogin,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Admin login
 // @route   POST /api/auth/login
 // @access  Public

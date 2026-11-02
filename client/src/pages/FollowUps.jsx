@@ -270,3 +270,4 @@ const FollowUps = () => {
 };
 
 export default FollowUps;
+

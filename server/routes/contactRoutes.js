@@ -6,3 +6,4 @@ const { contactLimiter } = require('../middleware/rateLimiter');
 router.post('/', contactLimiter, submitContactForm);
 
 module.exports = router;
+

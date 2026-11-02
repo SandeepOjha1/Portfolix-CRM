@@ -57,3 +57,4 @@ exports.logLeadActivity = async (req, res, next) => {
     next(error);
   }
 };
+

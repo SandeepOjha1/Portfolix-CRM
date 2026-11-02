@@ -49,3 +49,4 @@ router.route('/:id/activities')
   .post(logLeadActivity);
 
 module.exports = router;
+

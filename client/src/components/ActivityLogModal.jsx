@@ -179,3 +179,4 @@ const ActivityLogModal = ({ isOpen, onClose, leadId, onSuccess }) => {
 };
 
 export default ActivityLogModal;
+

@@ -6,7 +6,9 @@ import PrivateRoute from './components/PrivateRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 
 // Pages
+import Home from './pages/Home';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
 import LeadDetails from './pages/LeadDetails';
@@ -21,30 +23,30 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <Routes>
-            {/* Public Routes */}
+            {/* Public Pages */}
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/contact" element={<Contact />} />
 
             {/* Protected CRM Dashboard Routes */}
             <Route
-              path="/"
               element={
                 <PrivateRoute>
                   <DashboardLayout />
                 </PrivateRoute>
               }
             >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="leads/:id" element={<LeadDetails />} />
-              <Route path="followups" element={<FollowUps />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="profile" element={<Profile />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/leads" element={<Leads />} />
+              <Route path="/leads/:id" element={<LeadDetails />} />
+              <Route path="/followups" element={<FollowUps />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
 
             {/* Fallback route */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ToastProvider>
       </AuthProvider>

@@ -9,3 +9,4 @@ router.get('/', getFollowUps);
 router.patch('/:id', updateFollowUpStatus);
 
 module.exports = router;
+

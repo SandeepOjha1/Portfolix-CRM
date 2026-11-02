@@ -350,3 +350,4 @@ const LeadModal = ({ isOpen, onClose, lead = null, onSuccess }) => {
 };
 
 export default LeadModal;
+

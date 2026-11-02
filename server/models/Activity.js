@@ -41,3 +41,4 @@ const activitySchema = new mongoose.Schema(
 activitySchema.index({ leadId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Activity', activitySchema);
+

@@ -117,6 +117,19 @@ const Sidebar = ({ isOpen, onClose }) => {
             </p>
           </div>
 
+          {/* Public Home Link */}
+          <NavLink
+            to="/"
+            target="_blank"
+            className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-900/60 transition-all duration-200 group"
+          >
+            <div className="flex items-center gap-3.5">
+              <ExternalLink className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+              <span>Public Website</span>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
+          </NavLink>
+
           {/* Public Contact Form Link */}
           <NavLink
             to="/contact"
@@ -176,3 +189,4 @@ const Sidebar = ({ isOpen, onClose }) => {
 };
 
 export default Sidebar;
+

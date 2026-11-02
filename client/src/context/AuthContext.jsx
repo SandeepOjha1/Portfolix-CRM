@@ -44,6 +44,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signup = async (name, email, password, avatar) => {
+    const res = await api.post('/auth/register', { name, email, password, avatar });
+    if (res.data.success) {
+      const { token: jwtToken, admin: adminData } = res.data;
+      localStorage.setItem('crm_token', jwtToken);
+      localStorage.setItem('crm_admin', JSON.stringify(adminData));
+      setToken(jwtToken);
+      setAdmin(adminData);
+      return adminData;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('crm_token');
     localStorage.removeItem('crm_admin');
@@ -68,6 +80,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!token && !!admin,
         loading,
         login,
+        signup,
         logout,
         updateProfile,
       }}

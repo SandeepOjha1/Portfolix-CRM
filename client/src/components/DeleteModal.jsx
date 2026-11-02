@@ -56,3 +56,4 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, leadName = 'this lead' }) => 
 };
 
 export default DeleteModal;
+

@@ -27,6 +27,24 @@ const runIntegrationTests = async () => {
         const healthData = await healthRes.json();
         console.log('✓ Health status:', healthData.status);
 
+        // 1b. User Registration (Signup with personal/different credentials)
+        console.log('\n[Test 1b] User Registration (Signup)...');
+        const testUserEmail = `user_${Date.now()}@personal.com`;
+        const signupRes = await fetch(`${baseUrl}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'Jessica Vance',
+            email: testUserEmail,
+            password: 'securePassword123',
+          }),
+        });
+        const signupData = await signupRes.json();
+        if (!signupData.success || !signupData.token) {
+          throw new Error(`Signup failed: ${JSON.stringify(signupData)}`);
+        }
+        console.log(`✓ User registered successfully: ${signupData.admin.name} (${signupData.admin.email})`);
+
         // 2. Admin Login
         console.log('\n[Test 2] Admin Login...');
         const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
@@ -186,3 +204,4 @@ const runIntegrationTests = async () => {
 };
 
 runIntegrationTests();
+

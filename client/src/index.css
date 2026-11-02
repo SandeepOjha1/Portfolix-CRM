@@ -51,3 +51,85 @@
 .crm-badge-lost {
   @apply bg-rose-50 text-rose-700 border border-rose-200/60;
 }
+
+/* 3D Animations & Transforms */
+@keyframes float3d {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(3deg);
+  }
+}
+
+@keyframes float3dFast {
+  0%, 100% {
+    transform: translateY(0px) rotate(45deg);
+  }
+  50% {
+    transform: translateY(-22px) rotate(52deg);
+  }
+}
+
+@keyframes rotateCube {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  100% {
+    transform: rotateX(360deg) rotateY(360deg);
+  }
+}
+
+.float-slow {
+  animation: float3d 7s ease-in-out infinite;
+}
+
+.float-medium {
+  animation: float3d 5s ease-in-out infinite 1s;
+}
+
+.float-fast {
+  animation: float3dFast 4s ease-in-out infinite 0.5s;
+}
+
+.animate-spin-slow {
+  animation: rotateCube 20s linear infinite;
+}
+
+/* 3D Cube styles */
+.cube-3d {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: rotateCube 14s infinite linear;
+}
+
+.cube-3d-small {
+  width: 32px;
+  height: 32px;
+  animation: rotateCube 10s infinite linear reverse;
+}
+
+.cube-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(99, 102, 241, 0.08);
+  backdrop-filter: blur(4px);
+}
+
+.cube-face.front  { transform: translateZ(25px); }
+.cube-face.back   { transform: rotateY(180deg) translateZ(25px); }
+.cube-face.right  { transform: rotateY(90deg) translateZ(25px); }
+.cube-face.left   { transform: rotateY(-90deg) translateZ(25px); }
+.cube-face.top    { transform: rotateX(90deg) translateZ(25px); }
+.cube-face.bottom { transform: rotateX(-90deg) translateZ(25px); }
+
+.cube-3d-small .cube-face.front  { transform: translateZ(16px); }
+.cube-3d-small .cube-face.back   { transform: rotateY(180deg) translateZ(16px); }
+.cube-3d-small .cube-face.right  { transform: rotateY(90deg) translateZ(16px); }
+.cube-3d-small .cube-face.left   { transform: rotateY(-90deg) translateZ(16px); }
+.cube-3d-small .cube-face.top    { transform: rotateX(90deg) translateZ(16px); }
+.cube-3d-small .cube-face.bottom { transform: rotateX(-90deg) translateZ(16px); }

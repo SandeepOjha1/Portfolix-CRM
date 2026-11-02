@@ -113,3 +113,4 @@ exports.updateFollowUpStatus = async (req, res, next) => {
     next(error);
   }
 };
+
