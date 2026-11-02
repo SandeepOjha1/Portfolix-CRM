@@ -50,11 +50,6 @@ const adminSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
-    department: {
-      type: String,
-      default: '',
-      trim: true,
-    },
     address: {
       type: String,
       default: '',
@@ -65,17 +60,7 @@ const adminSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
-    state: {
-      type: String,
-      default: '',
-      trim: true,
-    },
     country: {
-      type: String,
-      default: '',
-      trim: true,
-    },
-    postalCode: {
       type: String,
       default: '',
       trim: true,

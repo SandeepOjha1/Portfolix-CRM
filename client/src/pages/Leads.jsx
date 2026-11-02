@@ -20,6 +20,7 @@ import {
   MoreVertical,
   X,
   FileSpreadsheet,
+  Users,
 } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
@@ -388,25 +389,55 @@ const Leads = () => {
               ) : leads.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-16 text-center">
-                    <div className="max-w-sm mx-auto flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
-                        <Users className="w-6 h-6" />
+                    <div className="max-w-md mx-auto flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+                        <Users className="w-7 h-7 text-indigo-500" />
                       </div>
-                      <h3 className="text-sm font-bold text-slate-800 mb-1">No Leads Found</h3>
-                      <p className="text-xs text-slate-500 mb-4">
-                        No clients match the current filter criteria or search query.
+                      <h3 className="text-base font-bold text-slate-800 mb-1">
+                        {search || statusFilter !== 'All' || sourceFilter !== 'All' || priorityFilter !== 'All'
+                          ? 'No Matching Leads Found'
+                          : 'No Leads in Pipeline Yet (0 Leads)'}
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-5 max-w-sm leading-relaxed">
+                        {search || statusFilter !== 'All' || sourceFilter !== 'All' || priorityFilter !== 'All'
+                          ? 'No clients match your filter criteria. Try resetting your search or filter values.'
+                          : 'Get started by creating your first client lead manually or submitting an inquiry via the website contact form.'}
                       </p>
-                      <button
-                        onClick={() => {
-                          setSearch('');
-                          setStatusFilter('All');
-                          setSourceFilter('All');
-                          setPriorityFilter('All');
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold"
-                      >
-                        Reset All Filters
-                      </button>
+                      {search || statusFilter !== 'All' || sourceFilter !== 'All' || priorityFilter !== 'All' ? (
+                        <button
+                          onClick={() => {
+                            setSearch('');
+                            setStatusFilter('All');
+                            setSourceFilter('All');
+                            setPriorityFilter('All');
+                            setCurrentPage(1);
+                          }}
+                          className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-md hover:bg-black transition-all"
+                        >
+                          Reset All Filters
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => {
+                              setEditingLead(null);
+                              setLeadModalOpen(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-xl shadow-md transition-all"
+                          >
+                            <Plus className="w-4 h-4 text-rose-500" />
+                            <span>Add First Lead</span>
+                          </button>
+                          <a
+                            href="/contact"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm transition-all"
+                          >
+                            Open Contact Form
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>

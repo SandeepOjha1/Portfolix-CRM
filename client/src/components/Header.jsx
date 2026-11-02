@@ -22,6 +22,8 @@ const Header = ({ onOpenSidebar, onSearch, searchValue = '' }) => {
     e.preventDefault();
     if (onSearch) {
       onSearch(searchValue);
+    } else if (searchValue.trim()) {
+      navigate(`/leads?search=${encodeURIComponent(searchValue.trim())}`);
     }
   };
 

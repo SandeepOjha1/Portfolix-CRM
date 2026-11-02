@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Save, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 const LeadModal = ({ isOpen, onClose, lead = null, onSuccess }) => {
   const { addToast } = useToast();
+  const { admin } = useAuth();
+  const defaultAdminName = admin?.name || 'Administrator';
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -18,7 +21,7 @@ const LeadModal = ({ isOpen, onClose, lead = null, onSuccess }) => {
     priority: 'Medium',
     dealValue: 0,
     score: 75,
-    assignedTo: 'Ryan Ellis',
+    assignedTo: defaultAdminName,
     followUpDate: '',
   });
 
@@ -38,7 +41,7 @@ const LeadModal = ({ isOpen, onClose, lead = null, onSuccess }) => {
         priority: lead.priority || 'Medium',
         dealValue: lead.dealValue || 0,
         score: lead.score || 75,
-        assignedTo: lead.assignedTo || 'Ryan Ellis',
+        assignedTo: lead.assignedTo || defaultAdminName,
         followUpDate: lead.followUpDate
           ? new Date(lead.followUpDate).toISOString().split('T')[0]
           : '',
@@ -56,12 +59,12 @@ const LeadModal = ({ isOpen, onClose, lead = null, onSuccess }) => {
         priority: 'Medium',
         dealValue: 0,
         score: 75,
-        assignedTo: 'Ryan Ellis',
+        assignedTo: defaultAdminName,
         followUpDate: '',
       });
     }
     setErrors({});
-  }, [lead, isOpen]);
+  }, [lead, isOpen, defaultAdminName]);
 
   if (!isOpen) return null;
 

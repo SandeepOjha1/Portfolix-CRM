@@ -228,43 +228,114 @@ const FollowUps = () => {
       </div>
 
       {/* Content Rendering based on Tab */}
-      <div className="space-y-8">
-        {(activeTab === 'all' || activeTab === 'overdue') && overdue.length > 0 && (
-          renderSection(
-            'Overdue Follow-ups',
-            overdue,
-            'bg-rose-100 text-rose-700',
-            <AlertCircle className="w-4 h-4 text-rose-500" />
-          )
-        )}
+      {counts.overdue + counts.today + counts.upcoming + counts.completed === 0 ? (
+        <div className="crm-card p-12 text-center max-w-xl mx-auto my-6">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <CalendarClock className="w-8 h-8" />
+          </div>
+          <h2 className="text-lg font-black text-slate-900 tracking-tight">
+            All Follow-ups Up To Date (0 Scheduled)
+          </h2>
+          <p className="text-xs text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
+            There are currently no overdue, today's, or upcoming client touchpoints scheduled. You can assign follow-up dates when creating leads or inside any lead details page.
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <button
+              onClick={() => navigate('/leads')}
+              className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-xl shadow-md transition-all"
+            >
+              <User className="w-3.5 h-3.5 text-rose-400" />
+              <span>Browse All Leads</span>
+            </button>
+            <a
+              href="/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm transition-all"
+            >
+              Open Contact Form
+            </a>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {(activeTab === 'all' || activeTab === 'overdue') && overdue.length > 0 && (
+            renderSection(
+              'Overdue Follow-ups',
+              overdue,
+              'bg-rose-100 text-rose-700',
+              <AlertCircle className="w-4 h-4 text-rose-500" />
+            )
+          )}
 
-        {(activeTab === 'all' || activeTab === 'today') && (
-          renderSection(
-            "Today's Follow-ups",
-            today,
-            'bg-amber-100 text-amber-700',
-            <Clock className="w-4 h-4 text-amber-500" />
-          )
-        )}
+          {activeTab === 'overdue' && overdue.length === 0 && (
+            <div className="p-8 rounded-2xl bg-white border border-slate-200/80 text-center max-w-md mx-auto">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-900">Zero Overdue Follow-ups</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Outstanding! All client communications are currently on track.
+              </p>
+            </div>
+          )}
 
-        {(activeTab === 'all' || activeTab === 'upcoming') && (
-          renderSection(
-            'Upcoming Follow-ups',
-            upcoming,
-            'bg-blue-100 text-blue-700',
-            <Calendar className="w-4 h-4 text-blue-500" />
-          )
-        )}
+          {(activeTab === 'all' || activeTab === 'today') && today.length > 0 && (
+            renderSection(
+              "Today's Follow-ups",
+              today,
+              'bg-amber-100 text-amber-700',
+              <Clock className="w-4 h-4 text-amber-500" />
+            )
+          )}
 
-        {(activeTab === 'all' || activeTab === 'completed') && completed.length > 0 && (
-          renderSection(
-            'Recently Completed',
-            completed,
-            'bg-emerald-100 text-emerald-700',
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          )
-        )}
-      </div>
+          {activeTab === 'today' && today.length === 0 && (
+            <div className="p-8 rounded-2xl bg-white border border-slate-200/80 text-center max-w-md mx-auto">
+              <Calendar className="w-10 h-10 text-amber-500 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-900">No Follow-ups Scheduled for Today</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                You're all clear for today. Check upcoming tasks or view your lead pipeline.
+              </p>
+            </div>
+          )}
+
+          {(activeTab === 'all' || activeTab === 'upcoming') && upcoming.length > 0 && (
+            renderSection(
+              'Upcoming Follow-ups',
+              upcoming,
+              'bg-blue-100 text-blue-700',
+              <Calendar className="w-4 h-4 text-blue-500" />
+            )
+          )}
+
+          {activeTab === 'upcoming' && upcoming.length === 0 && (
+            <div className="p-8 rounded-2xl bg-white border border-slate-200/80 text-center max-w-md mx-auto">
+              <Calendar className="w-10 h-10 text-blue-500 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-900">No Upcoming Follow-ups</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Schedule future calls or check-ins with prospects from the leads page.
+              </p>
+            </div>
+          )}
+
+          {(activeTab === 'all' || activeTab === 'completed') && completed.length > 0 && (
+            renderSection(
+              'Recently Completed',
+              completed,
+              'bg-emerald-100 text-emerald-700',
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            )
+          )}
+
+          {activeTab === 'completed' && completed.length === 0 && (
+            <div className="p-8 rounded-2xl bg-white border border-slate-200/80 text-center max-w-md mx-auto">
+              <CheckCircle2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-slate-900">No Completed Follow-ups Yet</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                When you click "Mark Done" on a scheduled follow-up, it will show up here.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
