@@ -16,7 +16,7 @@ exports.getDashboardStats = async (req, res, next) => {
     const lostLeads = await Lead.countDocuments({ status: 'Lost' });
 
     // Conversion rate
-    const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : 0;
+    const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : '0';
 
     // Status distribution
     const statusDistribution = [
@@ -54,9 +54,20 @@ exports.getDashboardStats = async (req, res, next) => {
     }));
 
     // Monthly lead generation & conversions trend for past 6 months
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-    sixMonthsAgo.setDate(1);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const last6Months = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      last6Months.push({
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        label: monthNames[d.getMonth()],
+      });
+    }
+
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     sixMonthsAgo.setHours(0, 0, 0, 0);
 
     const monthlyAgg = await Lead.aggregate([
@@ -86,31 +97,22 @@ exports.getDashboardStats = async (req, res, next) => {
           },
         },
       },
-      {
-        $sort: {
-          '_id.year': 1,
-          '_id.month': 1,
-        },
-      },
     ]);
 
-    const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-
-    // Format monthly data
-    const monthlyTrends = monthlyAgg.map((item) => {
-      const monthLabel = monthNames[item._id.month - 1];
+    // Merge with full 6 months list so every month appears even with 0 leads
+    const monthlyTrends = last6Months.map((m) => {
+      const found = monthlyAgg.find(
+        (a) => a._id.year === m.year && a._id.month === m.month
+      );
       return {
-        month: monthLabel,
-        total: item.total,
-        conversions: item.conversions,
-        contacted: item.contacted,
+        month: m.label,
+        total: found ? found.total : 0,
+        conversions: found ? found.conversions : 0,
+        contacted: found ? found.contacted : 0,
       };
     });
 
-    // Conversion Split by Subject/Category (as in Image 1: UI UX design, Flutter, etc.)
+    // Conversion Split by Subject/Category
     const subjectAgg = await Lead.aggregate([
       {
         $group: {
@@ -132,7 +134,7 @@ exports.getDashboardStats = async (req, res, next) => {
       percentage: s.total > 0 ? Math.round((s.converted / s.total) * 100) : 0,
     }));
 
-    // Recent leads (last 5)
+    // Recent leads (last 6)
     const recentLeads = await Lead.find()
       .sort({ createdAt: -1 })
       .limit(6)
@@ -205,3 +207,20 @@ exports.getDashboardStats = async (req, res, next) => {
   }
 };
 
+// @desc    Reset all leads and activities to 0
+// @route   POST /api/dashboard/reset
+// @access  Private
+exports.resetDashboardData = async (req, res, next) => {
+  try {
+    await Lead.deleteMany({});
+    await Activity.deleteMany({});
+    console.log('[CRM] Wiped all leads and activities. Database count is now 0.');
+
+    res.status(200).json({
+      success: true,
+      message: 'All leads and activity history have been completely reset to 0.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};

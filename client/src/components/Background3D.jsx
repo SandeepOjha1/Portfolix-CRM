@@ -52,3 +52,4 @@ const Background3D = () => {
 };
 
 export default Background3D;
+

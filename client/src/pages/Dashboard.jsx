@@ -14,6 +14,11 @@ import {
   Layers,
   ChevronRight,
   Loader2,
+  RotateCcw,
+  Plus,
+  Send,
+  AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 import {
   PieChart,
@@ -28,10 +33,16 @@ import {
   CartesianGrid,
 } from 'recharts';
 import api from '../services/api';
+import { useToast } from '../context/ToastContext';
+import LeadModal from '../components/LeadModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+
   const [data, setData] = useState({
     stats: {
       totalLeads: 0,
@@ -68,11 +79,36 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
+  // Reset database to 0 leads
+  const handleResetToZero = async () => {
+    if (
+      !window.confirm(
+        'Are you sure you want to reset all leads and activity data to 0? This will wipe the database so you can start with a completely fresh slate.'
+      )
+    ) {
+      return;
+    }
+
+    setResetting(true);
+    try {
+      const res = await api.post('/dashboard/reset');
+      if (res.data.success) {
+        addToast('All leads and activity history reset to 0', 'info');
+        fetchStats();
+      }
+    } catch (err) {
+      console.error('Failed to reset data:', err);
+      addToast('Failed to reset database', 'error');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-rose-500 mb-3" />
-        <p className="text-sm font-medium text-slate-500">Loading analytics dashboard...</p>
+        <p className="text-sm font-medium text-slate-500">Loading live analytics...</p>
       </div>
     );
   }
@@ -96,54 +132,99 @@ const Dashboard = () => {
     }
   };
 
+  // Safe Gauge percentage calculation
+  const targetDenominator = Math.max(stats.totalLeads, 10);
+  const gaugePercent = stats.totalLeads > 0 ? (stats.convertedLeads / targetDenominator) * 100 : 0;
+
   return (
     <div className="space-y-6">
-      {/* Page Title & Controls */}
+      {/* Top Banner & Control Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Analytics
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Analytics
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live DB
+            </span>
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Real-time pipeline performance and lead acquisition overview
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200/80 shadow-sm text-xs font-semibold text-slate-700">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>This Month</span>
-          </div>
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Reset to 0 Button */}
           <button
-            onClick={() => navigate('/leads')}
+            onClick={handleResetToZero}
+            disabled={resetting}
+            title="Reset database to 0 leads and 0 activities"
+            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50"
+          >
+            {resetting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+            )}
+            <span>Reset Data to 0</span>
+          </button>
+
+          {/* Test Public Form link */}
+          <button
+            onClick={() => window.open('/contact', '_blank')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all"
+          >
+            <Send className="w-3.5 h-3.5 text-sky-500" />
+            <span>Open Contact Form</span>
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </button>
+
+          {/* Add Lead Primary CTA */}
+          <button
+            onClick={() => setLeadModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-md transition-all"
           >
-            <span>View All Leads</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4 text-rose-500" />
+            <span>Add Lead</span>
           </button>
         </div>
       </div>
 
-      {/* Top Metrics Row (Matching Image 1) */}
+      {/* Top Metrics Row (100% Dynamic from actual MongoDB records) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Metric 1: Month Sales / Gauge Card */}
+        {/* Metric 1: Month Target / Gauge Card */}
         <div className="crm-card p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Target
             </span>
-            <span className="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">
-              Live
+            <span
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                stats.totalLeads > 0
+                  ? 'text-rose-500 bg-rose-50'
+                  : 'text-slate-500 bg-slate-100'
+              }`}
+            >
+              {stats.totalLeads > 0 ? 'Live' : '0 Leads'}
             </span>
           </div>
 
           <div className="my-3 text-center">
             {/* Semicircle Gauge representation */}
             <div className="relative w-28 h-14 mx-auto overflow-hidden">
-              <div className="w-28 h-28 border-[10px] border-slate-100 rounded-full border-t-rose-500 border-r-rose-400 rotate-[-45deg]" />
+              <div
+                className={`w-28 h-28 border-[10px] rounded-full rotate-[-45deg] transition-all duration-700 ${
+                  gaugePercent > 0
+                    ? 'border-slate-100 border-t-rose-500 border-r-rose-400'
+                    : 'border-slate-100'
+                }`}
+              />
             </div>
             <p className="text-2xl font-black text-slate-900 mt-1">
-              {stats.convertedLeads}/{(stats.totalLeads || 1) * 2}
+              {stats.convertedLeads} / {stats.totalLeads > 0 ? targetDenominator : 0}
             </p>
             <p className="text-[11px] font-semibold text-slate-400">Month conversions</p>
           </div>
@@ -161,9 +242,21 @@ const Dashboard = () => {
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Leads
             </span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
-              <TrendingDown className="w-3 h-3" />
-              -6%
+            <span
+              className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                stats.totalLeads > 0
+                  ? 'text-emerald-700 bg-emerald-50'
+                  : 'text-slate-500 bg-slate-100'
+              }`}
+            >
+              {stats.totalLeads > 0 ? (
+                <>
+                  <TrendingUp className="w-3 h-3" />
+                  Live
+                </>
+              ) : (
+                '0%'
+              )}
             </span>
           </div>
           <div className="my-2">
@@ -171,7 +264,10 @@ const Dashboard = () => {
             <p className="text-xs text-slate-500 mt-1">Total inquiries logged</p>
           </div>
           <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-slate-900 h-full rounded-full w-[70%]" />
+            <div
+              className="bg-slate-900 h-full rounded-full transition-all duration-500"
+              style={{ width: stats.totalLeads > 0 ? '100%' : '0%' }}
+            />
           </div>
         </div>
 
@@ -181,9 +277,14 @@ const Dashboard = () => {
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Conversions
             </span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-              <TrendingUp className="w-3 h-3" />
-              +13%
+            <span
+              className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                stats.convertedLeads > 0
+                  ? 'text-emerald-600 bg-emerald-50'
+                  : 'text-slate-500 bg-slate-100'
+              }`}
+            >
+              {stats.convertedLeads > 0 ? `+${stats.conversionRate}%` : '0%'}
             </span>
           </div>
           <div className="my-2">
@@ -191,18 +292,29 @@ const Dashboard = () => {
             <p className="text-xs text-slate-500 mt-1">Won client contracts</p>
           </div>
           <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, stats.conversionRate * 2)}%` }} />
+            <div
+              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+              style={{
+                width: stats.totalLeads > 0 ? `${(stats.convertedLeads / stats.totalLeads) * 100}%` : '0%',
+              }}
+            />
           </div>
         </div>
 
-        {/* Metric 4: Assigned / Qualified Leads */}
+        {/* Metric 4: Qualified Leads */}
         <div className="crm-card p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Qualified Leads
             </span>
-            <span className="text-[11px] font-semibold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
-              Pipeline
+            <span
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                stats.qualifiedLeads > 0
+                  ? 'text-purple-600 bg-purple-50'
+                  : 'text-slate-500 bg-slate-100'
+              }`}
+            >
+              {stats.qualifiedLeads > 0 ? 'Pipeline' : '0'}
             </span>
           </div>
           <div className="my-2">
@@ -210,7 +322,12 @@ const Dashboard = () => {
             <p className="text-xs text-slate-500 mt-1">High purchase intent</p>
           </div>
           <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-purple-500 h-full rounded-full w-[60%]" />
+            <div
+              className="bg-purple-500 h-full rounded-full transition-all duration-500"
+              style={{
+                width: stats.totalLeads > 0 ? `${(stats.qualifiedLeads / stats.totalLeads) * 100}%` : '0%',
+              }}
+            />
           </div>
         </div>
 
@@ -220,8 +337,14 @@ const Dashboard = () => {
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Not Contacted
             </span>
-            <span className="text-[11px] font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">
-              Needs Action
+            <span
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                stats.newLeads > 0
+                  ? 'text-sky-600 bg-sky-50'
+                  : 'text-slate-500 bg-slate-100'
+              }`}
+            >
+              {stats.newLeads > 0 ? 'Needs Action' : '0'}
             </span>
           </div>
           <div className="my-2">
@@ -229,12 +352,17 @@ const Dashboard = () => {
             <p className="text-xs text-slate-500 mt-1">Awaiting admin reply</p>
           </div>
           <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-sky-500 h-full rounded-full w-[45%]" />
+            <div
+              className="bg-sky-500 h-full rounded-full transition-all duration-500"
+              style={{
+                width: stats.totalLeads > 0 ? `${(stats.newLeads / stats.totalLeads) * 100}%` : '0%',
+              }}
+            />
           </div>
         </div>
       </div>
 
-      {/* Middle Row: Conversion Split & Ad Source Distribution (Matching Image 1) */}
+      {/* Middle Row: Conversion Split & Ad Source Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Conversion Split Progress Bars */}
         <div className="lg:col-span-2 crm-card p-6">
@@ -246,9 +374,9 @@ const Dashboard = () => {
             <Info className="w-4 h-4 text-slate-400" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {conversionSplit.length > 0 ? (
-              conversionSplit.map((item, idx) => (
+          {conversionSplit.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {conversionSplit.map((item, idx) => (
                 <div key={idx} className="p-4 rounded-2xl bg-slate-50/70 border border-slate-100">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-800">{item.subject}</span>
@@ -275,13 +403,22 @@ const Dashboard = () => {
                     <span className="font-semibold text-slate-700">{item.percentage}%</span>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="col-span-2 text-center py-8 text-xs text-slate-400">
-                No split data available yet
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10 px-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+              <p className="text-xs font-bold text-slate-700 mb-1">No Conversion Split Data Yet (0 Leads)</p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
+                When you create leads or receive website contact submissions, their service categories and conversion ratios will automatically compute here.
+              </p>
+              <button
+                onClick={() => setLeadModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-black transition-colors"
+              >
+                + Add First Lead
+              </button>
+            </div>
+          )}
 
           {/* Area Chart for Monthly Growth Trend */}
           <div className="mt-6 pt-5 border-t border-slate-100">
@@ -306,7 +443,7 @@ const Dashboard = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                   <XAxis dataKey="month" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: '#0F172A',
@@ -340,7 +477,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Right 1 Col: Ad Source Distribution (Matching Image 1 Donut Chart) */}
+        {/* Right 1 Col: Ad Source Distribution */}
         <div className="crm-card p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -351,78 +488,97 @@ const Dashboard = () => {
             </div>
 
             <div className="h-48 relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sourceDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="count"
-                  >
-                    {sourceDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val, name, props) => [`${val} leads (${props.payload.percentage}%)`, name]}
-                    contentStyle={{
-                      backgroundColor: '#0F172A',
-                      borderRadius: '12px',
-                      color: '#fff',
-                      fontSize: '12px',
-                      border: 'none',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {stats.totalLeads > 0 && sourceDistribution.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={sourceDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="count"
+                    >
+                      {sourceDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(val, name, props) => [`${val} leads (${props.payload.percentage}%)`, name]}
+                      contentStyle={{
+                        backgroundColor: '#0F172A',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        border: 'none',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-36 h-36 rounded-full border-4 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+                    <span className="text-2xl font-black text-slate-900">0</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Total Leads</span>
+                  </div>
+                </div>
+              )}
 
-              {/* Centered Total Indicator */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-black text-slate-900">{stats.totalLeads}</span>
-                <span className="text-[10px] uppercase font-bold text-slate-400">Total Leads</span>
-              </div>
+              {/* Centered Total Indicator when > 0 */}
+              {stats.totalLeads > 0 && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-black text-slate-900">{stats.totalLeads}</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Total Leads</span>
+                </div>
+              )}
             </div>
 
             {/* Source legend with percentages */}
             <div className="mt-4 space-y-2.5">
-              {sourceDistribution.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="font-semibold text-slate-700">{item.name}</span>
+              {sourceDistribution.length > 0 ? (
+                sourceDistribution.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="font-semibold text-slate-700">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 text-[11px] font-mono">{item.count} leads</span>
+                      <span className="font-bold text-slate-900 w-8 text-right">{item.percentage}%</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 text-[11px] font-mono">{item.count} leads</span>
-                    <span className="font-bold text-slate-900 w-8 text-right">{item.percentage}%</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-xs text-slate-400 py-2">
+                  No source channels recorded yet (0 leads)
+                </p>
+              )}
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Primary channel:</span>
             <span className="font-bold text-indigo-600">
-              {sourceDistribution[0]?.name || 'Website'} ({sourceDistribution[0]?.percentage || 0}%)
+              {sourceDistribution[0]?.name
+                ? `${sourceDistribution[0].name} (${sourceDistribution[0].percentage}%)`
+                : 'None yet (0%)'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Bottom Row: Monthly Sales Table & Customer Report (Matching Image 1) */}
+      {/* Bottom Row: Monthly Sales Table & Customer Report */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Monthly Sales Table */}
         <div className="lg:col-span-2 crm-card p-6 overflow-hidden">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-bold text-slate-900">Monthly sales table</h2>
-              <p className="text-xs text-slate-500">Past performance and conversion rates</p>
+              <p className="text-xs text-slate-500">Actual database records aggregated per month</p>
             </div>
           </div>
 
@@ -438,8 +594,9 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                {monthlyTrends.length > 0 ? (
-                  monthlyTrends.map((m, idx) => (
+                {monthlyTrends.map((m, idx) => {
+                  const winRate = m.total > 0 ? Math.round((m.conversions / m.total) * 100) : 0;
+                  return (
                     <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3 px-3 font-semibold text-slate-900">{m.month}</td>
                       <td className="py-3 px-3 text-right font-mono">{m.total}</td>
@@ -450,31 +607,23 @@ const Dashboard = () => {
                         {m.conversions}
                       </td>
                       <td className="py-3 px-3 text-right">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold text-[10px] ${
-                            idx % 2 === 0
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200'
-                          }`}
-                        >
-                          {idx % 2 === 0 ? '+6% ↗' : '-4% ↘'}
-                        </span>
+                        {m.total > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {winRate}% Win
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] font-mono">—</span>
+                        )}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-4 text-center text-slate-400">
-                      No monthly data available
-                    </td>
-                  </tr>
-                )}
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Right 1 Col: Customer Report / Status Distribution Gauges (Matching Image 1) */}
+        {/* Right 1 Col: Customer Report Gauges */}
         <div className="crm-card p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -484,11 +633,17 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* 3 circular indicators: New, Contacted/Repeated, Converted/Referral */}
+            {/* 3 circular indicators: New, Contacted, Converted */}
             <div className="grid grid-cols-3 gap-2 text-center py-4">
               {/* New */}
               <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full border-4 border-slate-100 border-t-rose-500 border-r-rose-400 flex items-center justify-center font-bold text-xs text-slate-800 rotate-45">
+                <div
+                  className={`w-16 h-16 rounded-full border-4 flex items-center justify-center font-bold text-xs text-slate-800 rotate-45 transition-colors ${
+                    stats.newLeads > 0
+                      ? 'border-slate-100 border-t-rose-500 border-r-rose-400'
+                      : 'border-slate-100'
+                  }`}
+                >
                   <span className="-rotate-45">{stats.newLeads}</span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-700 mt-2">New</span>
@@ -497,7 +652,13 @@ const Dashboard = () => {
 
               {/* Contacted */}
               <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full border-4 border-slate-100 border-t-amber-500 border-r-amber-400 flex items-center justify-center font-bold text-xs text-slate-800 rotate-12">
+                <div
+                  className={`w-16 h-16 rounded-full border-4 flex items-center justify-center font-bold text-xs text-slate-800 rotate-12 transition-colors ${
+                    stats.contactedLeads > 0
+                      ? 'border-slate-100 border-t-amber-500 border-r-amber-400'
+                      : 'border-slate-100'
+                  }`}
+                >
                   <span className="-rotate-12">{stats.contactedLeads}</span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-700 mt-2">Contacted</span>
@@ -506,7 +667,13 @@ const Dashboard = () => {
 
               {/* Converted */}
               <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full border-4 border-slate-100 border-t-emerald-500 border-r-emerald-400 flex items-center justify-center font-bold text-xs text-slate-800 rotate-90">
+                <div
+                  className={`w-16 h-16 rounded-full border-4 flex items-center justify-center font-bold text-xs text-slate-800 rotate-90 transition-colors ${
+                    stats.convertedLeads > 0
+                      ? 'border-slate-100 border-t-emerald-500 border-r-emerald-400'
+                      : 'border-slate-100'
+                  }`}
+                >
                   <span className="-rotate-90">{stats.convertedLeads}</span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-700 mt-2">Converted</span>
@@ -522,7 +689,9 @@ const Dashboard = () => {
               <p className="text-[11px] text-slate-400">
                 {stats.followUps?.overdue > 0
                   ? `${stats.followUps.overdue} overdue follow-up(s)`
-                  : `${stats.followUps?.today || 0} scheduled today`}
+                  : stats.followUps?.today > 0
+                  ? `${stats.followUps.today} scheduled today`
+                  : 'No pending follow-ups'}
               </p>
             </div>
             <button
@@ -540,7 +709,7 @@ const Dashboard = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-base font-bold text-slate-900">Recent Leads</h2>
-            <p className="text-xs text-slate-500">Latest potential clients captured in CRM</p>
+            <p className="text-xs text-slate-500">Live database inquiries</p>
           </div>
           <button
             onClick={() => navigate('/leads')}
@@ -551,70 +720,105 @@ const Dashboard = () => {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-3">Lead / Client</th>
-                <th className="py-3 px-3">Company</th>
-                <th className="py-3 px-3">Source</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Priority</th>
-                <th className="py-3 px-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {recentLeads.map((lead) => (
-                <tr key={lead._id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3 px-3 font-semibold text-slate-900">
-                    <div>
-                      <p>{lead.name}</p>
-                      <p className="text-[11px] text-slate-400 font-normal">{lead.email}</p>
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 font-medium text-slate-700">
-                    {lead.company || '—'}
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[11px]">
-                      {lead.source}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold ${statusBadge(lead.status)}`}>
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`text-[11px] font-semibold ${
-                        lead.priority === 'High'
-                          ? 'text-rose-600'
-                          : lead.priority === 'Medium'
-                          ? 'text-amber-600'
-                          : 'text-slate-500'
-                      }`}
-                    >
-                      {lead.priority}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-right">
-                    <button
-                      onClick={() => navigate(`/leads/${lead._id}`)}
-                      className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs transition-colors"
-                    >
-                      Inspect
-                    </button>
-                  </td>
+        {recentLeads.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider">
+                  <th className="py-3 px-3">Lead / Client</th>
+                  <th className="py-3 px-3">Company</th>
+                  <th className="py-3 px-3">Source</th>
+                  <th className="py-3 px-3">Status</th>
+                  <th className="py-3 px-3">Priority</th>
+                  <th className="py-3 px-3 text-right">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {recentLeads.map((lead) => (
+                  <tr key={lead._id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-3 font-semibold text-slate-900">
+                      <div>
+                        <p>{lead.name}</p>
+                        <p className="text-[11px] text-slate-400 font-normal">{lead.email}</p>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 font-medium text-slate-700">
+                      {lead.company || '—'}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[11px]">
+                        {lead.source}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold ${statusBadge(
+                          lead.status
+                        )}`}
+                      >
+                        {lead.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`text-[11px] font-semibold ${
+                          lead.priority === 'High'
+                            ? 'text-rose-600'
+                            : lead.priority === 'Medium'
+                            ? 'text-amber-600'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        {lead.priority}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => navigate(`/leads/${lead._id}`)}
+                        className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs transition-colors"
+                      >
+                        Inspect
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-10 px-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+            <p className="text-xs font-bold text-slate-800 mb-1">
+              Database is clean — 0 leads recorded
+            </p>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
+              Add your first lead using the button below or submit an inquiry via the website contact form to watch the metrics reflect in real time.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => setLeadModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-black transition-colors"
+              >
+                + Add First Lead
+              </button>
+              <button
+                onClick={() => window.open('/contact', '_blank')}
+                className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors"
+              >
+                Open Contact Form ↗
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Add Lead Modal */}
+      <LeadModal
+        isOpen={leadModalOpen}
+        onClose={() => setLeadModalOpen(false)}
+        onSuccess={fetchStats}
+      />
     </div>
   );
 };
 
 export default Dashboard;
-
