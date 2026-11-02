@@ -8,6 +8,7 @@
     "seed": "npm --prefix server run seed",
     "clear": "npm --prefix server run clear",
     "build:client": "npm --prefix client run build",
+    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
     "start": "npm --prefix server start"
   },
   "keywords": ["crm", "mern", "leads", "mongodb", "express", "react", "nodejs"],
