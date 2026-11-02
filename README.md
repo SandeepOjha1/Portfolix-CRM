@@ -281,7 +281,8 @@ This verifies:
 ### Authentication
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/login` | Public (Rate-limited) | Authenticate admin, returns JWT token |
+| `POST` | `/api/auth/register` | Public (Rate-limited) | Register new user/admin with credentials, returns JWT token |
+| `POST` | `/api/auth/login` | Public (Rate-limited) | Authenticate user/admin, returns JWT token |
 | `GET` | `/api/auth/me` | Private | Retrieve authenticated admin profile |
 | `PUT` | `/api/auth/profile` | Private | Update name, email, avatar, or change password |
 
