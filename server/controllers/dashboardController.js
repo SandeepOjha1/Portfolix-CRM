@@ -177,6 +177,60 @@ exports.getDashboardStats = async (req, res, next) => {
 
     const totalPipelineValue = pipelineValueAgg[0]?.totalValue || 0;
     const convertedPipelineValue = pipelineValueAgg[0]?.convertedValue || 0;
+    const avgDealSize = convertedLeads > 0 ? Math.round(convertedPipelineValue / convertedLeads) : 0;
+    const winLossRatio =
+      lostLeads > 0
+        ? (convertedLeads / lostLeads).toFixed(1)
+        : convertedLeads > 0
+        ? `${convertedLeads}:0`
+        : '0:0';
+    const responseRate =
+      totalLeads > 0
+        ? Math.round(((contactedLeads + qualifiedLeads + convertedLeads) / totalLeads) * 100)
+        : 0;
+
+    // Detailed Channel Performance Matrix
+    const channelAgg = await Lead.aggregate([
+      {
+        $group: {
+          _id: '$source',
+          total: { $sum: 1 },
+          contacted: {
+            $sum: {
+              $cond: [{ $in: ['$status', ['Contacted', 'Qualified', 'Converted']] }, 1, 0],
+            },
+          },
+          qualified: {
+            $sum: {
+              $cond: [{ $in: ['$status', ['Qualified', 'Converted']] }, 1, 0],
+            },
+          },
+          converted: {
+            $sum: { $cond: [{ $eq: ['$status', 'Converted'] }, 1, 0] },
+          },
+          lost: {
+            $sum: { $cond: [{ $eq: ['$status', 'Lost'] }, 1, 0] },
+          },
+          revenue: {
+            $sum: { $cond: [{ $eq: ['$status', 'Converted'] }, '$dealValue', 0] },
+          },
+          pipelineValue: { $sum: '$dealValue' },
+        },
+      },
+      { $sort: { total: -1 } },
+    ]);
+
+    const channelMetrics = channelAgg.map((c) => ({
+      source: c._id || 'Direct',
+      total: c.total,
+      contacted: c.contacted,
+      qualified: c.qualified,
+      converted: c.converted,
+      lost: c.lost,
+      revenue: c.revenue,
+      pipelineValue: c.pipelineValue,
+      conversionRate: c.total > 0 ? Math.round((c.converted / c.total) * 100) : 0,
+    }));
 
     res.status(200).json({
       success: true,
@@ -190,6 +244,9 @@ exports.getDashboardStats = async (req, res, next) => {
         conversionRate: parseFloat(conversionRate),
         totalPipelineValue,
         convertedPipelineValue,
+        avgDealSize,
+        winLossRatio,
+        responseRate,
         followUps: {
           overdue: overdueFollowUps,
           today: todayFollowUps,
@@ -198,6 +255,7 @@ exports.getDashboardStats = async (req, res, next) => {
       },
       statusDistribution,
       sourceDistribution,
+      channelMetrics,
       monthlyTrends,
       conversionSplit,
       recentLeads,

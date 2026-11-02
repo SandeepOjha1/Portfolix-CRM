@@ -8,6 +8,29 @@ const generateToken = (id) => {
   });
 };
 
+// Helper to format full admin profile object
+const formatAdminResponse = (admin) => ({
+  id: admin._id,
+  name: admin.name,
+  email: admin.email,
+  role: admin.role,
+  avatar: admin.avatar || '',
+  phone: admin.phone || '',
+  company: admin.company || '',
+  title: admin.title || '',
+  department: admin.department || '',
+  address: admin.address || '',
+  city: admin.city || '',
+  state: admin.state || '',
+  country: admin.country || '',
+  postalCode: admin.postalCode || '',
+  timezone: admin.timezone || 'UTC+05:30',
+  bio: admin.bio || '',
+  website: admin.website || '',
+  createdAt: admin.createdAt,
+  lastLogin: admin.lastLogin,
+});
+
 // @desc    Register / Sign up new user
 // @route   POST /api/auth/register (or /api/auth/signup)
 // @access  Public
@@ -58,14 +81,7 @@ exports.register = async (req, res, next) => {
       success: true,
       message: 'Account created successfully! Welcome to Portfolix CRM.',
       token,
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-        avatar: admin.avatar,
-        lastLogin: admin.lastLogin,
-      },
+      admin: formatAdminResponse(admin),
     });
   } catch (error) {
     next(error);
@@ -114,14 +130,7 @@ exports.login = async (req, res, next) => {
       success: true,
       message: 'Login successful',
       token,
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-        avatar: admin.avatar,
-        lastLogin: admin.lastLogin,
-      },
+      admin: formatAdminResponse(admin),
     });
   } catch (error) {
     next(error);
@@ -140,15 +149,7 @@ exports.getMe = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-        avatar: admin.avatar,
-        createdAt: admin.createdAt,
-        lastLogin: admin.lastLogin,
-      },
+      admin: formatAdminResponse(admin),
     });
   } catch (error) {
     next(error);
@@ -160,16 +161,46 @@ exports.getMe = async (req, res, next) => {
 // @access  Private
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, email, currentPassword, newPassword, avatar } = req.body;
+    const {
+      name,
+      email,
+      currentPassword,
+      newPassword,
+      avatar,
+      phone,
+      company,
+      title,
+      department,
+      address,
+      city,
+      state,
+      country,
+      postalCode,
+      timezone,
+      bio,
+      website,
+    } = req.body;
     const admin = await Admin.findById(req.admin._id).select('+password');
 
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
     }
 
-    if (name) admin.name = name.trim();
-    if (email) admin.email = email.toLowerCase().trim();
+    if (name !== undefined) admin.name = name.trim();
+    if (email !== undefined) admin.email = email.toLowerCase().trim();
     if (avatar !== undefined) admin.avatar = avatar;
+    if (phone !== undefined) admin.phone = phone.trim();
+    if (company !== undefined) admin.company = company.trim();
+    if (title !== undefined) admin.title = title.trim();
+    if (department !== undefined) admin.department = department.trim();
+    if (address !== undefined) admin.address = address.trim();
+    if (city !== undefined) admin.city = city.trim();
+    if (state !== undefined) admin.state = state.trim();
+    if (country !== undefined) admin.country = country.trim();
+    if (postalCode !== undefined) admin.postalCode = postalCode.trim();
+    if (timezone !== undefined) admin.timezone = timezone.trim();
+    if (bio !== undefined) admin.bio = bio.trim();
+    if (website !== undefined) admin.website = website.trim();
 
     if (newPassword) {
       if (!currentPassword) {
@@ -199,14 +230,7 @@ exports.updateProfile = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-        avatar: admin.avatar,
-        lastLogin: admin.lastLogin,
-      },
+      admin: formatAdminResponse(admin),
     });
   } catch (error) {
     next(error);

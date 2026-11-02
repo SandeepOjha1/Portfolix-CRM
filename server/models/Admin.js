@@ -35,6 +35,66 @@ const adminSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    phone: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    company: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    title: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    department: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    address: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    city: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    state: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    country: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    postalCode: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    timezone: {
+      type: String,
+      default: 'UTC+05:30',
+      trim: true,
+    },
+    bio: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    website: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     lastLogin: {
       type: Date,
       default: null,
