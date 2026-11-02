@@ -15,7 +15,7 @@ const contactLimiter = rateLimit({
 // Rate limiter for login endpoint (protects against brute-force attacks)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: process.env.NODE_ENV === 'production' ? 30 : 200,
   message: {
     success: false,
     message: 'Too many login attempts. Please try again in 15 minutes.',

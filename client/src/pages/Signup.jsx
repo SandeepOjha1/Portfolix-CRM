@@ -66,7 +66,7 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      await signup(name, email, password);
+      await signup(name.trim(), email.toLowerCase().trim(), password);
 
       // Trigger 3D celebratory confetti
       confetti({

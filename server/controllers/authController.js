@@ -236,3 +236,59 @@ exports.updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Reset password with email verification
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both your registered email and a new password',
+      });
+    }
+
+    if (confirmPassword && newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passwords do not match',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const admin = await Admin.findOne({ email: cleanEmail }).select('+password');
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: `No account found with email "${cleanEmail}". Please check your email or sign up.`,
+      });
+    }
+
+    // Set new password (will be hashed by pre('save'))
+    admin.password = newPassword;
+    admin.lastLogin = new Date();
+    await admin.save();
+
+    const token = generateToken(admin._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully! You can now log in.',
+      token,
+      admin: formatAdminResponse(admin),
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -13,21 +13,25 @@ const seedDatabase = async () => {
     await mongoose.connect(connUri);
     console.log(`[Seed] Connected to MongoDB at ${connUri}`);
 
-    // Clear existing data
-    await Admin.deleteMany({});
+    // Clear existing leads and activities, but PRESERVE all registered Admin accounts!
     await Lead.deleteMany({});
     await Activity.deleteMany({});
-    console.log('[Seed] Cleared existing Admin, Lead, and Activity collections');
+    console.log('[Seed] Cleared existing Lead and Activity collections (preserved Admin accounts)');
 
-    // 1. Seed Admin
-    const adminUser = await Admin.create({
-      name: 'Ryan Ellis',
-      email: 'admin@crm.com',
-      password: 'admin123', // Will be hashed by pre('save') hook
-      role: 'superadmin',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    });
-    console.log(`[Seed] Admin created: admin@crm.com / admin123`);
+    // 1. Ensure Demo Admin exists without deleting user accounts
+    let adminUser = await Admin.findOne({ email: 'admin@crm.com' });
+    if (!adminUser) {
+      adminUser = await Admin.create({
+        name: 'Ryan Ellis',
+        email: 'admin@crm.com',
+        password: 'admin123',
+        role: 'superadmin',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      });
+      console.log(`[Seed] Demo Admin created: admin@crm.com / admin123`);
+    } else {
+      console.log(`[Seed] Demo Admin already exists: admin@crm.com`);
+    }
 
     const now = new Date();
     const daysAgo = (days) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);

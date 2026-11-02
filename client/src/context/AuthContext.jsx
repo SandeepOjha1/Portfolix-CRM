@@ -72,6 +72,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email, newPassword, confirmPassword) => {
+    const res = await api.post('/auth/reset-password', {
+      email,
+      newPassword,
+      confirmPassword,
+    });
+    if (res.data.success) {
+      const { token: jwtToken, admin: adminData } = res.data;
+      localStorage.setItem('crm_token', jwtToken);
+      localStorage.setItem('crm_admin', JSON.stringify(adminData));
+      setToken(jwtToken);
+      setAdmin(adminData);
+      return adminData;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -83,6 +99,7 @@ export const AuthProvider = ({ children }) => {
         signup,
         logout,
         updateProfile,
+        resetPassword,
       }}
     >
       {children}
